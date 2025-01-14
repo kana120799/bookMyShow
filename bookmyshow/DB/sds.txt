@@ -1,0 +1,123 @@
+
+
+model Address {
+  id       String @id @default(uuid())
+  street   String
+  city     String
+  state    String
+  zipCode  String
+  userId   String? @unique
+  user     User? @relation(fields: [userId], references: [id])
+  cinemaId String? @unique
+  cinema   Cinema? @relation(fields: [cinemaId], references: [id])
+}
+
+model Booking {
+  id        String  @id @default(uuid())
+  userId    String
+
+  user      User    @relation(fields: [userId], references: [id])
+  showId    String
+
+  show      Show    @relation(fields: [showId], references: [id])
+  seats     ShowSeat[]  
+  status    BookingStatus @default(PENDING)
+  payment   Payment?
+}
+model Movie {
+  id           String  @id @default(uuid())
+  title        String
+  description  String
+  durationMins Int
+  language     String
+  releaseDate  DateTime
+  country      String
+  genre        String
+  shows        Show[]                 
+}
+
+model Cinema {
+  id        String @id @default(uuid())
+  name      String
+  halls     CinemaHall[]
+  addressId String? @unique
+  address   Address? @relation(fields: [addressId], references: [id])  // Define relation here only
+}
+
+model CinemaHall {
+  id         String @id @default(uuid())
+  name       String
+  totalSeats Int
+  cinemaId   String
+  cinema     Cinema @relation(fields: [cinemaId], references: [id])
+  seats      CinemaHallSeat[]
+  shows      Show[]
+}
+
+model Show {
+  id           String   @id @default(uuid())
+  movieId      String
+  cinemaHallId String
+  startTime    DateTime
+  movie        Movie   @relation(fields: [movieId], references: [id])
+  cinemaHall   CinemaHall @relation(fields: [cinemaHallId], references: [id])
+  seats        ShowSeat[]
+  bookings     Booking[]
+}
+
+model ShowSeat {
+  id        String @id @default(uuid())
+  seatId    String
+  seat      CinemaHallSeat @relation(fields: [seatId], references: [id])
+  isReserved Boolean @default(false)
+  price      Float
+  showId     String
+  show       Show   @relation(fields: [showId], references: [id])
+  bookingId  String? @unique
+  booking    Booking? @relation(fields: [bookingId], references: [id])  // Define relation only here
+  @@unique([seatId, showId])  // Ensures a seat is reserved only once per show
+}
+
+model CinemaHallSeat {
+  id        String @id @default(uuid())
+  row       Int  // Could be String if you need A, B, C rows
+  column    Int
+  type      SeatType
+  hallId    String
+  hall      CinemaHall @relation(fields: [hallId], references: [id])
+}
+
+model Payment {
+  id           String @id @default(uuid())
+  amount       Float
+  mode         PaymentMode
+  createdOn    DateTime @default(now())
+  status       PaymentStatus
+  transactionId String?
+  cardDetailsId String? @unique
+  cardDetails  CardDetails? @relation(fields: [cardDetailsId], references: [id])  // One-to-one relation
+  bookingId    String @unique
+  booking      Booking @relation(fields: [bookingId], references: [id])  
+}
+
+model CardDetails {
+  id          String @id @default(uuid())
+  nameOnCard  String
+  cardNumber  String @unique
+  expiryDate  DateTime
+}
+
+model Notification {
+  id          String @id @default(uuid())
+  createdOn   DateTime @default(now())
+  content     String
+  userId      String
+  user        User @relation(fields: [userId], references: [id]) 
+}
+
+model Coupon {
+  id         String @id @default(uuid())
+  code       String @unique
+  discount   Float
+  validTill  DateTime
+}
